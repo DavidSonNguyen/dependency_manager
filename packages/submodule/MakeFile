@@ -1,0 +1,136 @@
+project=/Users/davidsonnguyen/Desktop/suf_lib_mobile/lib
+package=package:susulibrary
+
+gen-from-arb:
+	flutter pub pub run intl_translation:generate_from_arb --output-dir=lib/res/localization \ --no-use-deferred-loading lib/res/localization/app_localization.dart lib/res/localization/intl_*.arb
+
+build-di:
+	flutter packages pub run build_runner build --delete-conflicting-outputs
+	/usr/bin/make -f /Users/davidsonnguyen/Desktop/suf_lib_mobile/MakeFile clean-di
+
+clean-di:
+	find . -name "*.inject.summary" |xargs rm --
+	find . -name "*.inject.dart" -size 0 |xargs rm --
+	find . -name "*.reflectable.dart" |xargs rm --
+
+
+finder_name=action
+feature=Action
+gen-feature:
+	mkdir -p ${project}/feature/${finder_name}
+	/usr/bin/make -f /Users/davidsonnguyen/Desktop/suf_lib_mobile/MakeFile create-action
+	/usr/bin/make -f /Users/davidsonnguyen/Desktop/suf_lib_mobile/MakeFile create-state
+	/usr/bin/make -f /Users/davidsonnguyen/Desktop/suf_lib_mobile/MakeFile create-middleware
+	/usr/bin/make -f /Users/davidsonnguyen/Desktop/suf_lib_mobile/MakeFile create-reducers
+	/usr/bin/make -f /Users/davidsonnguyen/Desktop/suf_lib_mobile/MakeFile create-repo
+	/usr/bin/make -f /Users/davidsonnguyen/Desktop/suf_lib_mobile/MakeFile create-module
+	/usr/bin/make -f /Users/davidsonnguyen/Desktop/suf_lib_mobile/MakeFile clean-di
+
+create-module:
+	touch ${project}/di/modules/${finder_name}_module.dart
+	echo "import 'package:inject/inject.dart';" >> ${project}/di/modules/${finder_name}_module.dart
+	echo "import 'package:susulibrary/feature/${finder_name}/middlewares.dart';" >> ${project}/di/modules/${finder_name}_module.dart
+	echo "import 'package:susulibrary/feature/${finder_name}/repo/api_service.dart';" >> ${project}/di/modules/${finder_name}_module.dart
+	echo "import 'package:susulibrary/feature/${finder_name}/repo/repository.dart';" >> ${project}/di/modules/${finder_name}_module.dart
+	echo "" >> ${project}/di/modules/${finder_name}_module.dart
+	echo "@module" >> ${project}/di/modules/${finder_name}_module.dart
+	echo "class ${feature}Module {" >> ${project}/di/modules/${finder_name}_module.dart
+	echo "	@provide" >> ${project}/di/modules/${finder_name}_module.dart
+	echo "	@singleton" >> ${project}/di/modules/${finder_name}_module.dart
+	echo "	Abstract${feature}Repository ${finder_name}Repository() {" >> ${project}/di/modules/${finder_name}_module.dart
+	echo "		return ${feature}Repository(${feature}ApiService());" >> ${project}/di/modules/${finder_name}_module.dart
+	echo "	}" >> ${project}/di/modules/${finder_name}_module.dart
+	echo "" >> ${project}/di/modules/${finder_name}_module.dart
+	echo "	@provide" >> ${project}/di/modules/${finder_name}_module.dart
+	echo "	@singleton" >> ${project}/di/modules/${finder_name}_module.dart
+	echo "	${feature}Middleware ${finder_name}Middleware(Abstract${feature}Repository ${finder_name}Repository) {" >> ${project}/di/modules/${finder_name}_module.dart
+	echo "		return ${feature}Middleware(${finder_name}Repository);" >> ${project}/di/modules/${finder_name}_module.dart
+	echo "	}" >> ${project}/di/modules/${finder_name}_module.dart
+	echo "}" >> ${project}/di/modules/${finder_name}_module.dart
+
+create-action:
+	touch ${project}/feature/${finder_name}/actions.dart
+	echo "abstract class ${feature}Action {}" >> ${project}/feature/${finder_name}/actions.dart
+
+create-state:
+	touch ${project}/feature/${finder_name}/state.dart
+	echo "import 'package:built_value/built_value.dart';" >> ${project}/feature/${finder_name}/state.dart
+	echo "part 'state.g.dart';" >> ${project}/feature/${finder_name}/state.dart
+	echo "abstract class Abstract${feature}Feature {" >> ${project}/feature/${finder_name}/state.dart
+	echo "	final Abstract${feature}State ${finder_name}State;" >> ${project}/feature/${finder_name}/state.dart
+	echo ""	>> ${project}/feature/${finder_name}/state.dart
+	echo "	Abstract${feature}Feature(this.${finder_name}State);" >> ${project}/feature/${finder_name}/state.dart
+	echo "}" >> ${project}/feature/${finder_name}/state.dart
+	echo "abstract class Abstract${feature}State {}" >> ${project}/feature/${finder_name}/state.dart
+	echo "abstract class ${feature}State implements Built<${feature}State, ${feature}StateBuilder>, Abstract${feature}State {" >> ${project}/feature/${finder_name}/state.dart
+	echo "	${feature}State._();" >> ${project}/feature/${finder_name}/state.dart
+	echo "" >> ${project}/feature/${finder_name}/state.dart
+	echo "	factory ${feature}State.init() {" >> ${project}/feature/${finder_name}/state.dart
+	echo "		return ${feature}State();" >> ${project}/feature/${finder_name}/state.dart
+	echo "	}" >> ${project}/feature/${finder_name}/state.dart
+	echo "" >> ${project}/feature/${finder_name}/state.dart
+	echo "	factory ${feature}State([void Function(${feature}StateBuilder) updates]) = _\$$${feature}State;" >> ${project}/feature/${finder_name}/state.dart
+	echo "}" >> ${project}/feature/${finder_name}/state.dart
+	/usr/bin/make -f /Users/davidsonnguyen/Desktop/suf_lib_mobile/MakeFile build-di
+
+create-middleware:
+	touch ${project}/feature/${finder_name}/middlewares.dart
+	echo "import 'package:inject/inject.dart';" >> ${project}/feature/${finder_name}/middlewares.dart
+	echo "import 'package:redux_epics/redux_epics.dart';" >> ${project}/feature/${finder_name}/middlewares.dart
+	echo "import 'repo/repository.dart';" >> ${project}/feature/${finder_name}/middlewares.dart
+	echo "import 'actions.dart';" >> ${project}/feature/${finder_name}/middlewares.dart
+	echo "import 'state.dart';" >> ${project}/feature/${finder_name}/middlewares.dart
+	echo "" >> ${project}/feature/${finder_name}/middlewares.dart
+	echo "class ${feature}Middleware implements EpicClass<Abstract${feature}Feature> {" >> ${project}/feature/${finder_name}/middlewares.dart
+	echo "	final Abstract${feature}Repository repository;" >> ${project}/feature/${finder_name}/middlewares.dart
+	echo "" >> ${project}/feature/${finder_name}/middlewares.dart
+	echo "	@provide" >> ${project}/feature/${finder_name}/middlewares.dart
+	echo "	${feature}Middleware(this.repository);" >> ${project}/feature/${finder_name}/middlewares.dart
+	echo "	@override" >> ${project}/feature/${finder_name}/middlewares.dart
+	echo "	Stream<dynamic> call(Stream<dynamic> actions, EpicStore<Abstract${feature}Feature> store) {" >> ${project}/feature/${finder_name}/middlewares.dart
+	echo "		return combineEpics<Abstract${feature}Feature>([])(actions, store);" >> ${project}/feature/${finder_name}/middlewares.dart
+	echo "	}" >> ${project}/feature/${finder_name}/middlewares.dart
+	echo "}" >> ${project}/feature/${finder_name}/middlewares.dart
+
+create-reducers:
+	touch ${project}/feature/${finder_name}/reducers.dart
+	echo "import 'package:redux/redux.dart';" >> ${project}/feature/${finder_name}/reducers.dart
+	echo "import 'state.dart';" >> ${project}/feature/${finder_name}/reducers.dart
+	echo "import 'actions.dart';" >> ${project}/feature/${finder_name}/reducers.dart
+	echo "" >> ${project}/feature/${finder_name}/reducers.dart
+	echo "final Reducer<${feature}State> ${finder_name}Reducers = combineReducers<${feature}State>([]);" >> ${project}/feature/${finder_name}/reducers.dart
+
+create-repo:
+	mkdir -p ${project}/feature/${finder_name}/repo
+	touch ${project}/feature/${finder_name}/repo/repository.dart
+	touch ${project}/feature/${finder_name}/repo/api_service.dart
+	echo "import 'package:inject/inject.dart';" >> ${project}/feature/${finder_name}/repo/repository.dart
+	echo "import 'api_service.dart';" >> ${project}/feature/${finder_name}/repo/repository.dart
+	echo "" >> ${project}/feature/${finder_name}/repo/repository.dart
+	echo "abstract class Abstract${feature}Repository {}" >> ${project}/feature/${finder_name}/repo/repository.dart
+	echo "" >> ${project}/feature/${finder_name}/repo/repository.dart
+	echo "class ${feature}Repository implements Abstract${feature}Repository{" >> ${project}/feature/${finder_name}/repo/repository.dart
+	echo "	final Abstract${feature}Repository apiService;" >> ${project}/feature/${finder_name}/repo/repository.dart
+	echo "" >> ${project}/feature/${finder_name}/repo/repository.dart
+	echo "	@provide" >> ${project}/feature/${finder_name}/repo/repository.dart
+	echo "	${feature}Repository(this.apiService);" >> ${project}/feature/${finder_name}/repo/repository.dart
+	echo "}" >> ${project}/feature/${finder_name}/repo/repository.dart
+	echo "import 'repository.dart';" >> ${project}/feature/${finder_name}/repo/api_service.dart
+	echo "" >> ${project}/feature/${finder_name}/repo/api_service.dart
+	echo "class ${feature}ApiService implements Abstract${feature}Repository {}" >> ${project}/feature/${finder_name}/repo/api_service.dart
+
+model=action
+model_path=/Users/davidsonnguyen/Desktop/suf_lib_mobile/lib/feature/${model}/models
+model_name=Action
+create-model:
+	mkdir -p ${model_path}
+	touch ${model_path}/${model}.dart
+	echo "import 'package:built_value/built_value.dart';" >> ${model_path}/${model}.dart
+	echo "part '${model}.g.dart';" >> ${model_path}/${model}.dart
+	echo "" >> ${model_path}/${model}.dart
+	echo "abstract class ${model_name} implements Built<${model_name}, ${model_name}Builder> {" >> ${model_path}/${model}.dart
+	echo "	${model_name}._();" >> ${model_path}/${model}.dart
+	echo "" >> ${model_path}/${model}.dart
+	echo "	factory ${model_name}([void Function(${model_name}Builder) updates]) = _\$$${model_name};" >> ${model_path}/${model}.dart
+	echo "}" >> ${model_path}/${model}.dart
+	/usr/bin/make -f /Users/davidsonnguyen/Desktop/suf_lib_mobile/MakeFile build-di
